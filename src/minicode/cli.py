@@ -620,6 +620,10 @@ def main():
             print(f'❌ {RED}Error: MINICODE_CONTEXT_WINDOW must be an integer.{RESET}', flush=True)
             return 1
 
+        if 'TAVILY_BASE_URL' not in os.environ:
+            user_input = input('📝 Tavily Base URL [https://api.tavily.com]: ').strip()
+            os.environ['TAVILY_BASE_URL'] = user_input or 'https://api.tavily.com'
+
         if 'TAVILY_API_KEY' not in os.environ:
             user_input = getpass.getpass('📝 Tavily API Key (optional): ')
             os.environ['TAVILY_API_KEY'] = user_input
@@ -644,7 +648,10 @@ def main():
         }
 
         if os.environ['TAVILY_API_KEY']:
-            tavily_client = tavily.TavilyClient(api_key=os.environ['TAVILY_API_KEY'])
+            tavily_client = tavily.TavilyClient(
+                api_base_url=os.environ['TAVILY_BASE_URL'],
+                api_key=os.environ['TAVILY_API_KEY'],
+            )
             tools.update({
                 'WebFetch': WebFetchTool(client=tavily_client, skip_permissions=args.skip_permissions),
                 'WebSearch': WebSearchTool(client=tavily_client, skip_permissions=args.skip_permissions),

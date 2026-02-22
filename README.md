@@ -20,6 +20,7 @@ export OPENAI_BASE_URL=https://openrouter.ai/api/v1
 export OPENAI_API_KEY=sk-123
 export MINICODE_MODEL=z-ai/glm-5
 export MINICODE_CONTEXT_WINDOW=204800
+export TAVILY_BASE_URL=https://api.tavily.com
 export TAVILY_API_KEY=tvly-dev-123 # optional, for WebFetch and WebSearch
 minicode
 ```
