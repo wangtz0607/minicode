@@ -137,68 +137,48 @@ class BashTool:
                 executable=self._bash_path,
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
                 text=True,
                 cwd=cwd,
             )
 
-            stdout_lines = []
-            stderr_lines = []
+            output_lines = []
 
             def read_stream(stream, collected):
                 for line in stream:
                     print(f'{GRAY}{line}{RESET}', end='', flush=True)
                     collected.append(line)
 
-            stdout_thread = threading.Thread(target=read_stream, args=(process.stdout, stdout_lines))
-            stderr_thread = threading.Thread(target=read_stream, args=(process.stderr, stderr_lines))
-            stdout_thread.start()
-            stderr_thread.start()
+            thread = threading.Thread(target=read_stream, args=(process.stdout, output_lines))
+            thread.start()
 
             process.wait(timeout=timeout)
-            stdout_thread.join()
-            stderr_thread.join()
+            thread.join()
         except subprocess.TimeoutExpired:
             process.kill()
-            stdout_thread.join()
-            stderr_thread.join()
+            thread.join()
 
             raise ToolError(f'Timed out after {timeout} second(s).')
 
-        stdout_content = ''.join(stdout_lines)
-        stderr_content = ''.join(stderr_lines)
+        output_content = ''.join(output_lines)
 
-        if len(stdout_content) > 16384:
+        if len(output_content) > 65536:
             with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False, suffix='.txt') as f:
-                f.write(stdout_content)
-                stdout_file_path = f.name
+                f.write(output_content)
+                output_file_path = f.name
 
-            stdout = {
-                'file_path': stdout_file_path,
-                'total_lines': len(stdout_lines),
+            output = {
+                'file_path': output_file_path,
+                'total_lines': len(output_lines),
                 'message': 'Output too long. Full output saved to file.',
             }
         else:
-            stdout = {'content': stdout_content}
-
-        if len(stderr_content) > 16384:
-            with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False, suffix='.txt') as f:
-                f.write(stderr_content)
-                stderr_file_path = f.name
-
-            stderr = {
-                'file_path': stderr_file_path,
-                'total_lines': len(stderr_lines),
-                'message': 'Output too long. Full output saved to file.',
-            }
-        else:
-            stderr = {'content': stderr_content}
+            output = {'content': output_content}
 
         print(f'✅ {GREEN}Success{RESET}', flush=True)
 
         return {
-            'stdout': stdout,
-            'stderr': stderr,
+            'output': output,
             'exit_code': process.returncode,
         }
 
