@@ -687,7 +687,10 @@ Working Directory: {os.getcwd()}'''
                                     stream_options={'include_usage': True},
                                 )
 
+                                has_reasoning_content = False
                                 reasoning_content = ''
+                                has_reasoning_details = False
+                                reasoning_details = []
                                 content = ''
                                 tool_calls = []
                                 usage = None
@@ -706,7 +709,14 @@ Working Directory: {os.getcwd()}'''
 
                                     if delta_reasoning_content is not None:
                                         print(f'{GRAY}{delta_reasoning_content}{RESET}', end='', flush=True)
+                                        has_reasoning_content = True
                                         reasoning_content += delta_reasoning_content
+
+                                    delta_reasoning_details = getattr(delta, 'reasoning_details', None)
+
+                                    if delta_reasoning_details is not None:
+                                        has_reasoning_details = True
+                                        reasoning_details.extend(delta_reasoning_details)
 
                                     delta_content = getattr(delta, 'content', None)
 
@@ -776,13 +786,8 @@ Working Directory: {os.getcwd()}'''
                         print(f'❌ {RED}Error: {repr(e)}{RESET}', flush=True)
                         break
 
-                    messages.append({
+                    message = {
                         'role': 'assistant',
-                        # https://api-docs.deepseek.com/guides/thinking_mode#compatibility-notice
-                        # https://docs.z.ai/guides/capabilities/thinking-mode
-                        # https://platform.moonshot.ai/docs/guide/use-kimi-k2-thinking-model#multi-step-tool-call
-                        # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#preserving-reasoning
-                        'reasoning_content': reasoning_content,
                         'content': content,
                         'tool_calls': [
                             {
@@ -794,7 +799,20 @@ Working Directory: {os.getcwd()}'''
                                 },
                             } for tool_call in tool_calls
                         ]
-                    })
+                    }
+
+                    # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#preserving-reasoning
+                    # https://api-docs.deepseek.com/guides/thinking_mode#compatibility-notice
+                    # https://docs.z.ai/guides/capabilities/thinking-mode
+                    # https://platform.moonshot.ai/docs/guide/use-kimi-k2-thinking-model#multi-step-tool-call
+
+                    if has_reasoning_details:
+                        message['reasoning_details'] = reasoning_details
+
+                    if has_reasoning_content:
+                        message['reasoning_content'] = reasoning_content
+
+                    messages.append(message)
 
                     if usage is not None:
                         tokens = getattr(usage, 'total_tokens', 0)
