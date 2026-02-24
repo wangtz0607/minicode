@@ -742,10 +742,8 @@ Working Directory: {os.getcwd()}'''
                                                 print(f'{GRAY}{arguments}{RESET}', end='', flush=True)
                                                 tool_calls[-1]['arguments'] += arguments
 
-                                    chunk_usage = getattr(chunk, 'usage', None)
-
-                                    if chunk_usage is not None:
-                                        usage = chunk_usage
+                                    if chunk.usage is not None:
+                                        usage = chunk.usage
 
                                 print('\n', end='', flush=True)
                                 break
