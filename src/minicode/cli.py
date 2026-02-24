@@ -680,6 +680,7 @@ Working Directory: {os.getcwd()}'''
                                 reasoning_details = []
                                 content = ''
                                 tool_calls = []
+                                finish_reason = None
                                 usage = None
 
                                 for chunk in stream:
@@ -742,6 +743,9 @@ Working Directory: {os.getcwd()}'''
                                                 print(f'{GRAY}{arguments}{RESET}', end='', flush=True)
                                                 tool_calls[-1]['arguments'] += arguments
 
+                                    if chunk.choices[0].finish_reason is not None:
+                                        finish_reason = chunk.choices[0].finish_reason
+
                                     if chunk.usage is not None:
                                         usage = chunk.usage
 
@@ -798,6 +802,9 @@ Working Directory: {os.getcwd()}'''
                         message['reasoning_content'] = reasoning_content
 
                     messages.append(message)
+
+                    if finish_reason not in ('stop', 'tool_calls', 'function_call'):
+                        print(f'⚠️ {ORANGE}Warning: finish_reason={finish_reason}{RESET}', flush=True)
 
                     if usage is not None:
                         tokens = getattr(usage, 'total_tokens', 0)
