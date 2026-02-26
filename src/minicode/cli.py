@@ -90,10 +90,12 @@ class BashTool:
                     },
                     'timeout': {
                         'type': 'number',
+                        'minimum': 1,
+                        'default': 60,
                         'description': 'Timeout in seconds.',
                     },
                 },
-                'required': ['command', 'cwd', 'timeout'],
+                'required': ['command', 'cwd'],
                 'additionalProperties': False,
             },
         },
@@ -103,7 +105,7 @@ class BashTool:
         self._bash_path = bash_path
         self._skip_permissions = skip_permissions
 
-    def __call__(self, command, cwd, timeout):
+    def __call__(self, command, cwd, timeout=60):
         if not os.path.isabs(cwd):
             raise ToolError('cwd must be an absolute path.')
 
@@ -112,9 +114,6 @@ class BashTool:
 
         if not os.path.isdir(cwd):
             raise ToolError('cwd is not a directory.')
-
-        if timeout < 1:
-            raise ToolError('timeout must be at least 1.')
 
         print(command, flush=True)
 
@@ -199,15 +198,21 @@ Results are returned using cat -n format, with line numbers starting at 1.''',
                     },
                     'offset': {
                         'type': 'integer',
-                        'description': 'Line number to start reading from. Default is 1.',
+                        'minimum': 1,
+                        'default': 1,
+                        'description': 'Line number to start reading from.',
                     },
                     'limit': {
                         'type': 'integer',
-                        'description': 'Maximum number of lines to read. Default is 1000.',
+                        'minimum': 1,
+                        'default': 1000,
+                        'description': 'Maximum number of lines to read.',
                     },
                     'chars_limit': {
                         'type': 'integer',
-                        'description': 'Maximum number of characters to read. Default is 65536.',
+                        'minimum': 1,
+                        'default': 65536,
+                        'description': 'Maximum number of characters to read.',
                     },
                 },
                 'required': ['file_path'],
@@ -220,15 +225,6 @@ Results are returned using cat -n format, with line numbers starting at 1.''',
         self._skip_permissions = skip_permissions
 
     def __call__(self, file_path, offset=1, limit=1000, chars_limit=65536):
-        if offset < 1:
-            raise ToolError('offset must be at least 1.')
-
-        if limit < 1:
-            raise ToolError('limit must be at least 1.')
-
-        if chars_limit < 1:
-            raise ToolError('chars_limit must be at least 1.')
-
         if not os.path.isabs(file_path):
             raise ToolError('file_path must be an absolute path.')
 
