@@ -170,7 +170,7 @@ class BashTool:
             output = {
                 'file_path': output_file_path,
                 'total_lines': len(output_lines),
-                'message': 'Output too long. Full output saved to file.',
+                'total_chars': len(output_content),
             }
         else:
             output = {'content': output_content}
@@ -203,11 +203,11 @@ Results are returned using cat -n format, with line numbers starting at 1.''',
                     },
                     'limit': {
                         'type': 'integer',
-                        'description': 'Number of lines to read. Default is 1000.',
+                        'description': 'Maximum number of lines to read. Default is 1000.',
                     },
-                    'max_line_length': {
+                    'chars_limit': {
                         'type': 'integer',
-                        'description': 'Maximum length of each line. Longer lines will be truncated. Default is 1000.',
+                        'description': 'Maximum number of characters to read. Default is 65536.',
                     },
                 },
                 'required': ['file_path'],
@@ -219,15 +219,15 @@ Results are returned using cat -n format, with line numbers starting at 1.''',
     def __init__(self, skip_permissions=False):
         self._skip_permissions = skip_permissions
 
-    def __call__(self, file_path, offset=1, limit=1000, max_line_length=1000):
+    def __call__(self, file_path, offset=1, limit=1000, chars_limit=65536):
         if offset < 1:
             raise ToolError('offset must be at least 1.')
 
         if limit < 1:
             raise ToolError('limit must be at least 1.')
 
-        if max_line_length < 1:
-            raise ToolError('max_line_length must be at least 1.')
+        if chars_limit < 1:
+            raise ToolError('chars_limit must be at least 1.')
 
         if not os.path.isabs(file_path):
             raise ToolError('file_path must be an absolute path.')
@@ -242,19 +242,23 @@ Results are returned using cat -n format, with line numbers starting at 1.''',
             raise ToolError('file_path is not readable.')
 
         with open(file_path, mode='r', encoding='utf-8') as f:
-            lines = f.readlines()
+            full_lines = f.readlines()
 
-        truncated_suffix = '... (truncated)\n'
+        full_content = ''.join(full_lines)
 
-        content = ''.join(
-            f'{offset+i:>6}\t{line[:max_line_length] + truncated_suffix if len(line) > max_line_length else line}'
-            for i, line in enumerate(lines[offset - 1 : offset + limit - 1])
-        )
+        lines = full_lines[offset - 1:]
 
-        if len(content) > 65536:
-            content = content[:65536] + truncated_suffix
+        if len(lines) > limit:
+            lines = lines[:limit] + [f'... (truncated to {limit} lines)\n']
 
-        print(f'{file_path} (lines {offset}-{min(offset + limit - 1, len(lines))})', flush=True)
+        content = ''.join(lines)
+
+        if len(content) > chars_limit:
+            content = content[:chars_limit] + f'... (truncated to {chars_limit} chars)\n'
+
+        result_content = ''.join(f'{offset+i:>6}\t{line}' for i, line in enumerate(content.splitlines(keepends=True)))
+
+        print(f'{file_path} (lines {offset}-{min(offset + limit - 1, len(full_lines))})', flush=True)
 
         if not self._skip_permissions:
             if not confirm('❓ Do you want to proceed?'):
@@ -268,9 +272,9 @@ Results are returned using cat -n format, with line numbers starting at 1.''',
         print(f'✅ {GREEN}Success{RESET}', flush=True)
 
         return {
-            'content': content,
-            'eof': offset + limit - 1 >= len(lines),
-            'total_lines': len(lines),
+            'content': result_content,
+            'total_lines': len(full_lines),
+            'total_chars': len(full_content),
         }
 
 
