@@ -492,8 +492,27 @@ class WebFetchTool:
                     raise ToolError('User rejected.')
 
         response = self._client.extract(urls=[url], extract_depth='advanced')
+
+        title = response['results'][0]['title']
+        content = response['results'][0]['raw_content']
+
+        if len(content) > 65536:
+            with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False, suffix='.txt') as f:
+                f.write(content)
+                file_path = f.name
+
+            result = {
+                'title': title,
+                'file_path': file_path,
+            }
+        else:
+            result = {
+                'title': title,
+                'content': content,
+            }
+
         print(f'✅ {GREEN}Success{RESET}', flush=True)
-        return response['results'][0]
+        return result
 
 
 class WebSearchTool:
