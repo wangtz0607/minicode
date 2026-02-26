@@ -4,7 +4,7 @@ import getpass
 import json
 import os
 import platform
-import readline # noqa: F401
+import readline  # noqa: F401
 import shutil
 import subprocess
 import sys
@@ -609,7 +609,7 @@ def main():
             os.environ['TAVILY_API_KEY'] = user_input
 
         if not os.environ['TAVILY_API_KEY']:
-            print((f'⚠️ {ORANGE}Warning: TAVILY_API_KEY not set. WebFetch and WebSearch tools will be unavailable.{RESET}'), flush=True)
+            print(f'⚠️ {ORANGE}Warning: TAVILY_API_KEY not set. WebFetch and WebSearch tools will be unavailable.{RESET}', flush=True)
 
         openai_client = openai.OpenAI(
             base_url=os.environ['OPENAI_BASE_URL'],
@@ -758,7 +758,7 @@ Working Directory: {os.getcwd()}'''
                                 openai.ConflictError,
                                 openai.InternalServerError,
                                 openai.RateLimitError,
-                                openai.UnprocessableEntityError
+                                openai.UnprocessableEntityError,
                             ) as e:
                                 retries_left -= 1
 
@@ -786,8 +786,9 @@ Working Directory: {os.getcwd()}'''
                                     'name': tool_call['name'],
                                     'arguments': tool_call['arguments'],
                                 },
-                            } for tool_call in tool_calls
-                        ]
+                            }
+                            for tool_call in tool_calls
+                        ],
                     }
 
                     # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#preserving-reasoning
