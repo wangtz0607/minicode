@@ -315,10 +315,10 @@ class WriteTool:
         parent_dir = os.path.dirname(file_path) or '.'
 
         if not os.path.exists(parent_dir):
-            raise ToolError('Parent directory does not exist.')
+            raise ToolError('dirname(file_path) does not exist.')
 
         if not os.access(parent_dir, os.W_OK):
-            raise ToolError('Parent directory is not writable.')
+            raise ToolError('dirname(file_path) is not writable.')
 
         if not os.path.exists(file_path):
             diff = Diff(
